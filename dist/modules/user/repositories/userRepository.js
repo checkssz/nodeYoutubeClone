@@ -11,12 +11,12 @@ class UserRepository {
         mysql_1.pool.getConnection((err, connection) => {
             (0, bcrypt_1.hash)(password, 10, (err, hash) => {
                 if (err) {
-                    response.status(500).json(err);
+                    return response.status(500).json(err);
                 }
-                connection.query("INSERT INTO users (user_id, name, email, password) VALUES(?,?,?,?)", [(0, uuid_1.v4)(), name, email, hash], (error, result, fileds) => {
+                connection.query('INSERT INTO users (user_id, name, email, password) VALUES (?,?,?,?)', [(0, uuid_1.v4)(), name, email, hash], (error, result, filds) => {
                     connection.release();
                     if (error) {
-                        response.status(400).json(error);
+                        return response.status(400).json(error);
                     }
                     response.status(200).json({ message: "Usuário criado com sucesso" });
                 });
@@ -24,29 +24,23 @@ class UserRepository {
         });
     }
     login(request, response) {
-        const { email, password } = request.body;
+        const { name, email, password } = request.body;
         mysql_1.pool.getConnection((err, connection) => {
-            connection.query("SELECT * FROM users WHERE email = ?", [email], (error, results, fileds) => {
+            connection.query('SELECT * FROM users WHERE email = ?', [email], (error, results, filds) => {
                 connection.release();
                 if (error) {
-                    return response
-                        .status(400)
-                        .json({ error: "Erro na sua autenticação" });
+                    return response.status(400).json({ error: "Erro na sua autenticação" });
                 }
                 (0, bcrypt_1.compare)(password, results[0].password, (err, result) => {
                     if (err) {
-                        return response
-                            .status(400)
-                            .json({ error: "Erro na sua autenticação" });
+                        return response.status(400).json({ error: "Erro na sua autenticação" });
                     }
                     if (result) {
-                        //npm i jsonwebtoken
                         const token = (0, jsonwebtoken_1.sign)({
                             id: results[0].user_id,
-                            email: results[0].email,
+                            email: results[0].email
                         }, process.env.SECRET, { expiresIn: "1d" });
-                        console.log(token);
-                        return response.status(400).json({ token: token, message: "Autenticação concluída" });
+                        return response.status(200).json({ token: token, message: "Autenticado com sucesso" });
                     }
                 });
             });
